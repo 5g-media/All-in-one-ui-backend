@@ -1,0 +1,41 @@
+#cloud-config
+password: nextworks
+chpasswd: { expire: False }
+ssh_pwauth: True
+runcmd:
+  - mkdir -p /opt/cache/
+  - chmod 777 /opt/cache/
+  - /bin/bash /home/ubuntu/config/generate_hostname.sh
+  - cp /opt/ats/etc/trafficserver/records.config /opt/ats/etc/trafficserver/records.config.bkp
+  - sed -i -- 's/CONFIG proxy.config.http.uncacheable_requests_bypass_parent.*/CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 0/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.http.push_method_enabled.*/CONFIG proxy.config.http.push_method_enabled INT 1/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.http.cache.required_headers.*/CONFIG proxy.config.http.cache.required_headers INT 0/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.http.parent_proxy_routing_enable*/CONFIG proxy.config.http.parent_proxy_routing_enable INT 1/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.log.logging_enabled.*/CONFIG proxy.config.log.logging_enabled INT 1/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.log.max_space_mb_for_logs.*/CONFIG proxy.config.log.max_space_mb_for_logs INT 200/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.log.max_space_mb_headroom.*/CONFIG proxy.config.log.max_space_mb_headroom INT 100/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.log.rolling_enabled.*/CONFIG proxy.config.log.rolling_enabled INT 2/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.url_remap.pristine_host_hdr.*/CONFIG proxy.config.url_remap.pristine_host_hdr INT 1/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.log.rolling_interval_sec INT 86400/#CONFIG proxy.config.log.rolling_interval_sec INT 86400/g' /opt/ats/etc/trafficserver/records.config
+  - sed -i -- 's/CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*/#CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*/g' /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.admin.user_id STRING ubuntu" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http_ui_enabled INT 3" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.cache.cluster_cache_local INT 1" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.cache.enable_default_vary_headers INT 1" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.cache.max_stale_age INT 604800" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.auth_server_session_private INT 0" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.server_session_sharing.match STRING ip" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.http.cache.ignore_server_no_cache INT 1" >> /opt/ats/etc/trafficserver/records.config
+  - echo "CONFIG proxy.config.body_factory.template_sets_dir STRING /opt/ats/etc/trafficserver/body_factory" >> /opt/ats/etc/trafficserver/records.config
+  - cp /opt/ats/etc/trafficserver/storage.config /opt/ats/etc/trafficserver/storage.config.bkp
+  - sed -i -- 's/var\/trafficserver 256M/#var\/trafficserver 256M*/g' /opt/ats/etc/trafficserver/storage.config
+  - echo "/opt/cache 10G" >> /opt/ats/etc/trafficserver/storage.config
+  - sed -i -- 's/ens3/ens4/g' /home/ubuntu/config/cache_configure.sh
+  - /bin/bash /home/ubuntu/config/mon_configure.sh -e http://10.20.8.6:9200 -k 10.20.8.12:9092 -i ens4 -a 1s -n 1s
+  - chmod -R a+x /home/ubuntu/config/
+  - chown -R ubuntu:ubuntu /opt/ats/
+  - ip route add default via 10.20.8.1
+  - rm -f /home/ubuntu/config/resolv.conf.5gmedia
+  - ln -s /home/ubuntu/config/resolv.conf.5gmedia.portable /home/ubuntu/config/resolv.conf.5gmedia
+  - /bin/bash /home/ubuntu/config/cache_configure.sh
