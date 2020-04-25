@@ -91,12 +91,14 @@ public class FileStorageServiceImpl implements FileStorageService {
             if (uploadFileModel.getDescriptorType().equals("vnfd")) {
                 if (uploadFileModel.getSchemaName().equals("osm")) {                                     // upload osm yaml
                     String folder = PackageServiceUtils.getFileNameWithoutExtension(originalFileName, 5);
-                    uploadFileResponse.setFilePath(originalFileName);
+                    String changedFileName = PackageServiceUtils.changeNsdYamlName(this.fileStorageLocation, originalFileName, folder, timestamp);
+                    uploadFileResponse.setFilePath(changedFileName);
                     uploadFileResponse.setError(false);
                     uploadFileResponse.setFolderPath("nonArchive/" + folder + timestamp + "/" + folder);
                 } else if (uploadFileModel.getSchemaName().equals("tosca")) {                            // upload tosca yaml
                     String folder = PackageServiceUtils.getFileNameWithoutExtension(originalFileName, 5);
-                    uploadFileResponse.setFilePath(originalFileName);
+                    String changedFileName = PackageServiceUtils.changeNsdYamlName(this.fileStorageLocation, originalFileName, folder, timestamp);
+                    uploadFileResponse.setFilePath(changedFileName);
                     uploadFileResponse.setError(false);
                     uploadFileResponse.setFolderPath("nonArchive/" + folder + timestamp + "/Definitions");
                 }
